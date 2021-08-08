@@ -1,0 +1,46 @@
+server:
+  port: 8866
+spring:
+  application:
+    name: tulingmall-product
+  redis:
+    host: 192.168.65.232
+    port: 6379
+    password: 123456 #密码
+    timeout: 5000ms
+    lettuce:
+      pool:
+        max-active: 50
+        max-wait: -1ms
+        max-idle: 8
+        min-idle: 0
+management: #开启SpringBoot Admin的监控
+  endpoints:
+    web:
+      exposure:
+        include: '*'
+  endpoint:
+    health:
+      show-details: always
+
+seata:
+  config:
+    nacos:
+      server-addr: tlshop.com:8848
+    type: nacos
+  registry:
+    type: nacos
+  tx-service-group: prex_tx_group
+  client:
+    support:
+      spring:
+        datasource-autoproxy: true
+
+#zk配置
+zk:
+  curator:
+    retryCount: 5 #重试次数
+    elapsedTimeMs: 5000 #
+    connectUrl: tlshop.com:2181 #zk地址
+    sessionTimeOutMs: 60000 #会话超时时间
+    connectionTimeOutMs: 5000 #连接超时时间
