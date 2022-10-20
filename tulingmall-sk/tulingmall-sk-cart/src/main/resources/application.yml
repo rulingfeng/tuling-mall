@@ -42,5 +42,5 @@ feign:
         loggerLevel: full
         requestInterceptors:
           - com.tuling.tulingmall.feignapi.interceptor.HeaderInterceptor
-        readTimeout: 3000
+        readTimeout: 6000
         connectTimeout: 3000

@@ -15,6 +15,7 @@ import com.tuling.tulingmall.service.StockManageService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.ObjectUtils;
 
 import java.util.Date;
@@ -76,6 +77,7 @@ public class StockManageServiceImpl implements StockManageService {
     }
 
     @Override
+    @Transactional
     public CommonResult lockStock(List<CartPromotionItem> cartPromotionItemList) {
         try {
 

@@ -1,3 +1,4 @@
+
 feign:
   client:
     config:
@@ -5,16 +6,50 @@ feign:
         loggerLevel: full
         requestInterceptors:
           - com.tuling.tulingmall.ordercurr.feignapi.interceptor.HeaderInterceptor
-        readTimeout: 3000
+        readTimeout: 6000
         connectTimeout: 3000
+
+
 mybatis:
   configuration:
     map-underscore-to-camel-case: true
     log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
 
+spring:
+  datasource:
+    dynamic:
+      primary: order
 #支付-当面付qrcode存储与访问路径设置
 #trade:
 #  zhifu:
 #    qrcode:
 #      storePath: C:/temp/qr-code
 #      paySuccessCallBack: http://roykingw.free.idcfengye.com/order/paySuccess
+
+#seata 配置
+seata:
+  application-id: tulingmall-order-curr
+  # seata 服务分组，要与服务端配置service.vgroup_mapping的后缀对应
+  tx-service-group: tuling-order-group
+  enable-auto-data-source-proxy: false  #关闭数据源自动代理，交给sharding-jdbc那边
+  registry:
+    # 指定nacos作为注册中心
+    type: nacos
+    nacos:
+      application: seata-server
+      server-addr: 192.168.65.103:8848
+      group: SEATA_GROUP
+
+  config:
+    # 指定nacos作为配置中心
+    type: nacos
+    nacos:
+      server-addr: 192.168.65.103:8848
+      namespace: 7e838c12-8554-4231-82d5-6d93573ddf32
+      group: SEATA_GROUP
+      data-id: seataServer.properties
+
+ribbon:
+  eager-load:
+    enabled: true
+    clients: tulingmall-product,tulingmall-member,tulingmall-cart

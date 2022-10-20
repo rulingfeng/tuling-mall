@@ -3,7 +3,6 @@ package com.tuling.tulingmall.ordercurr.service.impl;
 import com.github.pagehelper.PageHelper;
 import com.tuling.tulingmall.common.api.CommonResult;
 import com.tuling.tulingmall.common.api.ResultCode;
-import com.tuling.tulingmall.common.exception.BusinessException;
 import com.tuling.tulingmall.ordercurr.component.CancelOrderSender;
 import com.tuling.tulingmall.ordercurr.dao.PortalOrderDao;
 import com.tuling.tulingmall.ordercurr.dao.PortalOrderItemDao;
@@ -19,6 +18,8 @@ import com.tuling.tulingmall.ordercurr.mapper.OmsOrderSettingMapper;
 import com.tuling.tulingmall.ordercurr.model.*;
 import com.tuling.tulingmall.ordercurr.service.OmsPortalOrderService;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.shardingsphere.transaction.annotation.ShardingTransactionType;
+import org.apache.shardingsphere.transaction.core.TransactionType;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -147,7 +148,10 @@ public class OmsPortalOrderServiceImpl implements OmsPortalOrderService {
      * @return
      */
     @Override
+    //注意：GlobalTransactional和ShardingTransactionType不能同时出现，此处不能使用@GlobalTransactional
     //@GlobalTransactional(name = "generateOrder",rollbackFor = Exception.class)
+    //全局事务交给SeataATShardingTransactionManager管理
+    @ShardingTransactionType(TransactionType.BASE)
     @Transactional
     public CommonResult generateOrder(OrderParam orderParam, Long memberId) {
         log.debug("接受参数OrderParam：{} memberId：{}",orderParam,memberId);
@@ -166,7 +170,7 @@ public class OmsPortalOrderServiceImpl implements OmsPortalOrderService {
         String orderSn = orderId.toString();
 
         List<OmsOrderItem> orderItemList = new ArrayList<>();
-
+        //获取会员选中的购物车列表
         List<CartPromotionItem> cartPromotionItemList = cartFeignApi.listSelectedPromotion(orderParam.getItemIds());
         int itemSize = cartPromotionItemList.size();
 
@@ -269,6 +273,7 @@ public class OmsPortalOrderServiceImpl implements OmsPortalOrderService {
         //计算赠送成长值
         order.setGrowth(0);
         order.setOrderSn(orderSn);
+
         //插入order表和order_item表
         omsOrderMapper.insert(order);
         orderItemDao.insertList(orderItemList);

@@ -51,7 +51,7 @@ feign:
     config:
       default:
         loggerLevel: full
-        readTimeout: 3000
+        readTimeout: 6000
         connectTimeout: 3000
 
 #rocketmq配置

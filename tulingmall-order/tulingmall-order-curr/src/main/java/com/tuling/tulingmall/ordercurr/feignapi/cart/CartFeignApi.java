@@ -20,4 +20,5 @@ public interface CartFeignApi {
     @RequestMapping(value = "/list/selectedpromotion", method = RequestMethod.POST)
     public List<CartPromotionItem> listSelectedPromotion(@RequestBody List<Long> itemIds);
 
+
 }
