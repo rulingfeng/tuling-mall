@@ -4,6 +4,7 @@ import com.github.pagehelper.PageHelper;
 import com.tuling.tulingmall.common.api.CommonResult;
 import com.tuling.tulingmall.common.api.ResultCode;
 import com.tuling.tulingmall.ordercurr.component.CancelOrderSender;
+import com.tuling.tulingmall.ordercurr.component.rocketmq.ReduceStockMsgSender;
 import com.tuling.tulingmall.ordercurr.dao.PortalOrderDao;
 import com.tuling.tulingmall.ordercurr.dao.PortalOrderItemDao;
 import com.tuling.tulingmall.ordercurr.domain.*;
@@ -276,6 +277,7 @@ public class OmsPortalOrderServiceImpl implements OmsPortalOrderService {
 
         //插入order表和order_item表
         omsOrderMapper.insert(order);
+
         orderItemDao.insertList(orderItemList);
 
         //TODO 分布式事务 删除购物车中的下单商品
@@ -294,6 +296,67 @@ public class OmsPortalOrderServiceImpl implements OmsPortalOrderService {
         return CommonResult.success(portalOrderDao.getDetail(orderId));
     }
 
+    /**
+     * 修改订单状态
+     * @param orderId
+     * @param payType
+     * @param transactionId
+     */
+    @Override
+    @Transactional
+    public void updateOrderStatus(Long orderId, Integer payType, String transactionId) {
+        //本地事务 修改订单支付状态
+        OmsOrder order = new OmsOrder();
+        order.setId(orderId);
+        order.setStatus(OrderConstant.ORDER_STATUS_UNDELIVERY);
+        order.setPayType(payType);
+        order.setPaymentTime(new Date());
+        omsOrderMapper.updateByPrimaryKeySelective(order);
+
+        //添加事务日志
+        omsOrderMapper.addTx(transactionId);
+
+    }
+
+//    @Override
+//    public Integer paySuccess(Long orderId,Integer payType) {
+//        OmsOrderDetail orderDetail = portalOrderDao.getDetail(orderId);
+//        //订单已经超时关闭了，这时再支付就没用了。
+//        if(orderDetail.getStatus().equals(5)){
+//            log.warn("订单"+orderDetail.getOrderSn()+"已经关闭，无法正常支付。请发起支付宝订单退款接口。");
+//            //TODO 发起支付宝订单退款
+//            return -1;
+//        }
+//        //修改订单支付状态
+//        OmsOrder order = new OmsOrder();
+//        order.setId(orderId);
+//        order.setStatus(OrderConstant.ORDER_STATUS_UNDELIVERY);
+//        order.setPayType(payType);
+//        order.setPaymentTime(new Date());
+//        omsOrderMapper.updateByPrimaryKeySelective(order);
+//
+//        List<StockChanges> stockChangesList = new ArrayList<>();
+//        for(OmsOrderItem omsOrderItem : orderDetail.getOrderItemList()){
+//            stockChangesList.add(new StockChanges(omsOrderItem.getProductSkuId(),omsOrderItem.getProductQuantity()));
+//        }
+//        /*实际进行真实库存的扣减*/
+//        // todo 分布式事务
+//        // PO :可以使用MQ进行异步扣减
+//        CommonResult lockResult = pmsProductStockFeignApi.reduceStock(stockChangesList);
+//        if(lockResult.getCode() ==ResultCode.FAILED.getCode()) {
+//            log.warn("远程调用真实库存的扣减失败");
+//            return -1;
+//            //throw new RuntimeException("远程调用真实库存的扣减失败");
+//        }else{
+//            log.debug("远程调用真实库存的扣减成功");
+//            return (Integer) lockResult.getData();
+//        }
+//    }
+
+    @Autowired
+    ReduceStockMsgSender reduceStockMsgSender;
+
+    //TODO 改造为Rocketmq事务消息
     @Override
     public Integer paySuccess(Long orderId,Integer payType) {
         OmsOrderDetail orderDetail = portalOrderDao.getDetail(orderId);
@@ -303,31 +366,15 @@ public class OmsPortalOrderServiceImpl implements OmsPortalOrderService {
             //TODO 发起支付宝订单退款
             return -1;
         }
-        //修改订单支付状态
-        OmsOrder order = new OmsOrder();
-        order.setId(orderId);
-        order.setStatus(OrderConstant.ORDER_STATUS_UNDELIVERY);
-        order.setPayType(payType);
-        order.setPaymentTime(new Date());
-        omsOrderMapper.updateByPrimaryKeySelective(order);
 
-        List<StockChanges> stockChangesList = new ArrayList<>();
-        for(OmsOrderItem omsOrderItem : orderDetail.getOrderItemList()){
-            stockChangesList.add(new StockChanges(omsOrderItem.getProductSkuId(),omsOrderItem.getProductQuantity()));
-        }
         /*实际进行真实库存的扣减*/
         // todo 分布式事务
         // PO :可以使用MQ进行异步扣减
-        CommonResult lockResult = pmsProductStockFeignApi.reduceStock(stockChangesList);
-        if(lockResult.getCode() ==ResultCode.FAILED.getCode()) {
-            log.warn("远程调用真实库存的扣减失败");
-            return -1;
-            //throw new RuntimeException("远程调用真实库存的扣减失败");
-        }else{
-            log.debug("远程调用真实库存的扣减成功");
-            return (Integer) lockResult.getData();
-        }
+        // 使用事务消息机制发送扣减库存消息
+        return reduceStockMsgSender.sendReduceStockMsg(orderId,payType,orderDetail)? 1 : -1;
     }
+
+
 
     @Override
     public CommonResult cancelTimeOutOrder() {

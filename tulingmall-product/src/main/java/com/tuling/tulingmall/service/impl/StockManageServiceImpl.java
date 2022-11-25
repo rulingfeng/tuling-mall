@@ -1,6 +1,7 @@
 package com.tuling.tulingmall.service.impl;
 
 import com.tuling.tulingmall.common.api.CommonResult;
+import com.tuling.tulingmall.component.rocketmq.StockChangeEvent;
 import com.tuling.tulingmall.dao.FlashPromotionProductDao;
 import com.tuling.tulingmall.domain.CartPromotionItem;
 import com.tuling.tulingmall.domain.PmsProductParam;
@@ -15,11 +16,11 @@ import com.tuling.tulingmall.service.StockManageService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.ObjectUtils;
 
 import java.util.Date;
 import java.util.List;
-
 
 /**
  *
@@ -135,6 +136,22 @@ public class StockManageServiceImpl implements StockManageService {
             return CommonResult.failed();
         }
     }
+
+    @Override
+    @Transactional
+    public void reduceStock(StockChangeEvent stockChangeEvent) {
+        //幂等性校验
+        if(skuStockMapper.isExistTx(stockChangeEvent.getTransactionId())>0){
+            return ;
+        }
+        List<StockChanges> stockChangesList = stockChangeEvent.getStockChangesList();
+        //扣减冻结库存
+        skuStockMapper.updateSkuStock(stockChangesList);
+        //添加事务记录，用于幂等
+        skuStockMapper.addTx(stockChangeEvent.getTransactionId());
+    }
+
+
 
     //验证秒杀时间
     private boolean volidateMiaoShaTime(PmsProductParam product) {

@@ -256,4 +256,16 @@ public class OmsPortalOrderController {
 
         }
     }
+
+    //TODO 用于支付完成后的逻辑测试
+    @RequestMapping(value = "/test/paySuccess",method = RequestMethod.POST)
+    @ResponseBody
+    public void testPaySuccess(Integer payType,Long orderId) {
+        int count = portalOrderService.paySuccess(orderId,payType);
+        if(count > 0){
+            CommonResult.success("支付成功，订单完成支付");
+        }else{
+            CommonResult.failed("支付失败，订单未能完成支付");
+        }
+    }
 }

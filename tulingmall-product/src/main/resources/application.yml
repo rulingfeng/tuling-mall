@@ -39,3 +39,8 @@ seata:
       data-id: seataServer.properties
 
 
+rocketmq:
+  name-server: 192.168.65.164:9876
+  consumer:
+    group: stock_consumer_group
+    topic: reduce-stock

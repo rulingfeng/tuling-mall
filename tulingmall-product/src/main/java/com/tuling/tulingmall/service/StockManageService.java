@@ -2,9 +2,9 @@ package com.tuling.tulingmall.service;
 
 
 import com.tuling.tulingmall.common.api.CommonResult;
+import com.tuling.tulingmall.component.rocketmq.StockChangeEvent;
 import com.tuling.tulingmall.domain.CartPromotionItem;
 import com.tuling.tulingmall.domain.StockChanges;
-import com.tuling.tulingmall.model.OmsOrderItem;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import java.util.List;
@@ -59,4 +59,7 @@ public interface StockManageService {
     CommonResult reduceStock(List<StockChanges> stockChangesList);
 
     CommonResult recoverStock(List<StockChanges> stockChangesList);
+
+
+    void reduceStock(StockChangeEvent stockChangeEvent);
 }

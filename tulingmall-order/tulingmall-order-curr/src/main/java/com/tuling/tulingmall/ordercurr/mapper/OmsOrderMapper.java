@@ -5,6 +5,7 @@ import com.tuling.tulingmall.ordercurr.dto.OmsOrderDeliveryParam;
 import com.tuling.tulingmall.ordercurr.dto.OmsOrderQueryParam;
 import com.tuling.tulingmall.ordercurr.model.OmsOrder;
 import com.tuling.tulingmall.ordercurr.model.OmsOrderExample;
+import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
 import org.apache.ibatis.annotations.Update;
@@ -32,6 +33,12 @@ public interface OmsOrderMapper{
     int updateByPrimaryKeySelective(OmsOrder record);
 
     int updateByPrimaryKey(OmsOrder record);
+
+    @Select("select count(1) from local_transaction_log where tx_no = #{txNo}")
+    int isExistTx(String txNo);
+
+    @Insert("insert into local_transaction_log values(#{txNo},now());")
+    int addTx(String txNo);
 
     /**
      * 条件查询订单

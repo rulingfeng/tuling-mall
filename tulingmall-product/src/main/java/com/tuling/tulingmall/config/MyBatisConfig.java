@@ -21,7 +21,6 @@ public class MyBatisConfig {
     private MybatisProperties mybatisProperties;
 
 
-
     /* SEATA 分布式事务使用
     @Bean
     public SqlSessionFactoryBean sqlSessionFactory(DataSource dataSource) throws Exception {

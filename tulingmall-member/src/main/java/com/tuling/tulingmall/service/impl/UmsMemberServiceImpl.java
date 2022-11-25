@@ -211,7 +211,7 @@ public class UmsMemberServiceImpl implements UmsMemberService {
         //封装oauth2 请求头 clientId clientSecret
         HttpHeaders httpHeaders = wrapHttpHeaders();
 
-        //封装请求参数
+        //封装请求参数     oauth2 密码模式
         MultiValueMap<String, String> reqParams = new LinkedMultiValueMap<>();
         reqParams.add(MDA.USER_NAME,userName);
         reqParams.add(MDA.PASS,password);
